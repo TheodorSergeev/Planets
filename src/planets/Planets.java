@@ -7,7 +7,6 @@
 package planets;
 
 import model.PlanetarySystem;
-import view.Window;
 /**
  *
  * @author root
@@ -19,7 +18,7 @@ public class Planets {
      */ 
     public static void main(String[] args) {
         PlanetarySystem pl_syst = new PlanetarySystem();
-        Window main_wind = new Window(600, 500, pl_syst);
+        Window main_wind = new Window(700, 500, pl_syst);
         //Point3d test = new Point3d(1.0, 1.0, 0.0);
         //Point3d test2 = new Point3d(0.0, 0.0, 0.0);
     }
