@@ -10,17 +10,18 @@ public class AstralBody {
                double x_, double y_, 
                double vx_, double vy_, 
                boolean is_fixed_) {
+        
         if(m <= 0) {
-            // exception
+            throw new IllegalArgumentException("Planet mass cannot be <= 0");
         }
         if(R <= 0) {
-            // exception
+            throw new IllegalArgumentException("Planet radius cannot be <= 0");
         }
         
         is_fixed = is_fixed_;
-        mass = m;
-        radius = R;
-        
+        mass     = m;
+        radius   = R;
+      
         coord = new Point3d(x_,  y_,  0.0); 
         speed = new Point3d(vx_, vy_, 0.0); 
         accel = new Point3d(0.0, 0.0, 0.0); 
@@ -62,12 +63,13 @@ public class AstralBody {
         double len = dist.length();
 
         dist.normalize();
-        // g m M \vec{r} / r^3
 
+        if(Double.compare(len, 0.0) == 0) { // no collisions
+            return dist.mult(0.0);
+        }
+        
         double G = 1.0;//6.6740831 * Math.pow(10, -11);
         double c = - G * body.getM() / Math.pow(len, 2.0);
-        //System.out.println("c = " + c); 
-        //System.out.println("len = " + len); 
         return dist.mult(c);
     }
     

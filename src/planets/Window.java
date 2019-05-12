@@ -17,8 +17,10 @@ public class Window extends Frame implements WindowListener {
     
     private boolean is_sim_running;    // flags if the simulation is running
     Button button_play_pause;          // pauses/resumes simulation
+    Button button_save;                // saves current simulation state
     
     class PausePlayButListener implements ActionListener{
+        @Override
         public void actionPerformed(ActionEvent e) {
             if(button_play_pause == null) {
                 throw new IllegalArgumentException("button_play_pause is null");
@@ -27,26 +29,32 @@ public class Window extends Frame implements WindowListener {
             if(is_sim_running) {
                 button_play_pause.setLabel("Resume");
                 is_sim_running = false;
-                pl_painter.stop_timers();
+                pl_painter.stopTimers();
             } else {
                 button_play_pause.setLabel("Pause");
                 is_sim_running = true;
-                pl_painter.restart_timers();
+                pl_painter.restartTimers();
             }
         }
     };
 
-    public Window(int width, int height, PlanetarySystem pl_syst_) {
+    public Window(int width, int height, PlanetarySystem pl_syst_,
+                                         PlanetPainter   pl_paint_) {
 
         is_sim_running = true;
         
         if(width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Window dimensions must be greater than zero.");
         }
+        if(pl_syst_ == null) {
+            throw new IllegalArgumentException("PlanetarySystem pl_syst_ = null");
+        }if(pl_paint_ == null) {
+            throw new IllegalArgumentException("PlanetPainter pl_paint_ = null");
+        }
         
         dim = new Dimension(width, height);
      
-        pl_painter = new PlanetPainter(dim.width - 100, dim.height, pl_syst_, 100, 10, 1, 0.1);
+        pl_painter = pl_paint_;// 
 	pl_painter.setBounds(0, 0, 600, 500);
         add(pl_painter);
 
@@ -54,6 +62,11 @@ public class Window extends Frame implements WindowListener {
         button_play_pause.setBounds(dim.width - 80, 20, 60, 20); 
         button_play_pause.addActionListener(new PausePlayButListener());      
         add(button_play_pause);
+        
+        button_save = new Button("Save");
+        button_save.setBounds(dim.width - 80, 50, 60, 20); 
+        //button_save.addActionListener(new PausePlayButListener());      
+        add(button_save);
 
         setSize(dim.width, dim.height);
         setLayout(null);
@@ -67,7 +80,7 @@ public class Window extends Frame implements WindowListener {
     @Override
     public void windowClosing(WindowEvent arg0) {  
         System.out.println("windowClosing");  
-        pl_painter.stop_timers();
+        pl_painter.stopTimers();
         dispose();
     }  
 
