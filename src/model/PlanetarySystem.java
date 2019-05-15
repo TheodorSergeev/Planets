@@ -7,6 +7,37 @@ public class PlanetarySystem {
     private final ArrayList <AstralBody> arr;
     private final double dt;
     
+    public ArrayList <Point3d> getPlanetsPositions() {
+        
+        ArrayList <Point3d> coords = new ArrayList<>();
+        
+        for(AstralBody planet : arr) {
+            coords.add(planet.getCoord());
+        }
+        
+        return coords;
+        
+    }
+     
+    public void setPlanetsPositions(ArrayList <Point3d> new_pos) {
+        int size = arr.size();
+    
+        if(new_pos == null) {
+            throw new IllegalArgumentException("new_pos array is null");
+        }
+        if(new_pos.size() != size) {
+            throw new IllegalArgumentException("new_pos has size = " + new_pos.size() + " != " + size);
+        }
+        
+        for(int i = 0; i < size; ++i) {
+            arr.get(i).setPos(new_pos.get(i));
+        }
+                
+    }   
+    public double dt() {
+        return dt;
+    }
+    
     public void addPlanet(double m,  double R, 
                           double x,  double y,
                           double vx, double vy, boolean is_fixed) {
@@ -23,6 +54,17 @@ public class PlanetarySystem {
         if(pos < 0 || pos >= arr.size()) {
             throw new IllegalArgumentException("Planet number pos = " + pos + " is out of bounds");
         }
+    }
+    
+    public double getPlanetX(int pos) {
+        checkPos(pos);
+        return arr.get(pos).getCoord().getX();   
+    }
+    
+    
+    public double getPlanetY(int pos) {
+        checkPos(pos);
+        return arr.get(pos).getCoord().getY();   
     }
     
     public double getPlanetLeftUpX(int pos) {
@@ -68,18 +110,7 @@ public class PlanetarySystem {
         double G = 1.0;//6.6740831 * Math.pow(10, -11);
         //double sun_mass   = 1.98847 * Math.pow(10, 30);
         //double earth_mass = 5.9722 * Math.pow(10, 24);
-        
-        //AstralBody sun = new AstralBody(100.0, 10.0, 300.0, 250.0, 0.0, 0.0, true);
-
-        //double vy_0 = Math.pow(G * sun.getM() / 200.0, 0.5);
                 
-        //AstralBody earth   = new AstralBody(5.0, 10.0, 500.0, 250.0, 0.0, vy_0, false);
-        //AstralBody earth2  = new AstralBody(1.0, 10.0, 450.0, 300.0, 0.0, -vy_0, false);
-       
-        //arr.add(earth2);
-        //arr.add(earth);
-        //arr.add(sun);
-        
     }
  
 }

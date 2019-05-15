@@ -1,10 +1,19 @@
 package model;
 
-public class AstralBody {
+import java.io.Serializable;
+
+public class AstralBody implements Serializable {
  
     private boolean is_fixed; // if true, planet doesn't move
     private double mass, radius;
     private Point3d coord, speed, accel;
+    
+    public void setPos(Point3d new_pos) {
+        if(new_pos == null) {
+            throw new IllegalArgumentException("new_pos is null");
+        }
+        coord = new_pos;        
+    }
     
     AstralBody(double m, double R, 
                double x_, double y_, 

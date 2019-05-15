@@ -31,9 +31,10 @@ public class PlanetPainter extends Canvas {
     private int interval_paint;
     private int interval_calc;
     
-    private final ArrayList <Color> palette;
+    private ArrayList <Color> palette;
     private double paint_pause;
     
+    private boolean to_calculate;
     
     public void addPlanetColor(Color new_col) {
         if(new_col == null) {
@@ -42,19 +43,30 @@ public class PlanetPainter extends Canvas {
         palette.add(new_col);
     }
     
-    public final void stopTimers() {
+    
+    protected void stopTimers() {
+        if(timer_calc == null) {
+            throw new IllegalArgumentException("Can't close a null timer");
+        }
+        if(timer_paint == null) {
+            throw new IllegalArgumentException("Can't close a null timer");
+        }
+
         timer_calc.cancel();
         timer_paint.cancel();
+        
+        timer_calc = null;
+        timer_paint = null;
     }
 
-    public final void restartTimers() {
+    protected void restartTimers() {
         timer_calc  = new Timer();
         timer_paint = new Timer();
         timer_calc.scheduleAtFixedRate (new ScheduleCalcTask(),  init_delay, interval_calc);        
         timer_paint.scheduleAtFixedRate(new SchedulePaintTask(), init_delay, interval_paint);             
     }
     
-    public final void startTimers(int init_delay_, int int_paint_, int int_calc_) {
+    final protected void startTimers(int init_delay_, int int_paint_, int int_calc_) {
         if(init_delay_ < 0) {
             throw new IllegalArgumentException("init_delay_ < 0.");
         }
@@ -72,31 +84,50 @@ public class PlanetPainter extends Canvas {
         restartTimers();
     }
     
-    public PlanetPainter(int width, int height, PlanetarySystem pl_syst_, 
-                         int init_delay_, int int_paint_, int int_calc_,
-                         double paint_pause_) {
-
+    final protected void initializeCanvas(int width, int height, 
+                                  PlanetarySystem pl_syst_, double paint_pause_) {
         if(width <= 0 || height <= 0) {
             throw new IllegalArgumentException("Window dimensions must be greater than zero.");
         }
         if(paint_pause_ < 0) {
             throw new IllegalArgumentException("paint_pause_ < 0.");
         }
+        if(pl_syst_ == null) {
+            throw new IllegalArgumentException("pl_syst_ is null.");
+        }
         
-        paint_pause    = paint_pause_;
-               
+        paint_pause = paint_pause_;
+        pl_syst = pl_syst_;
+
         dim = new Dimension(width, height);
         palette = new ArrayList<>();
 
-        pl_syst = pl_syst_;
-        startTimers(init_delay_, int_paint_, int_calc_);
-        
         offscreen = null;
         offgc = null;
-        
     }
+
+    public PlanetPainter(int width, int height, 
+                         PlanetarySystem pl_syst_, double paint_pause_,
+                         int init_delay_, int int_paint_, int int_calc_) {
+
+        to_calculate = true;
+        initializeCanvas(width, height, pl_syst_, paint_pause_);
+        startTimers(init_delay_, int_paint_, int_calc_);
+                
+    }
+
+    public PlanetPainter(int width, int height, 
+                         PlanetarySystem pl_syst_, double paint_pause_,
+                         int init_delay_, int int_paint_) {
+
+        to_calculate = false;
+        initializeCanvas(width, height, pl_syst_, paint_pause_);
+        startTimers(init_delay_, int_paint_, int_paint_);
+                
+    }
+
     
-    private class SchedulePaintTask extends TimerTask {
+    protected class SchedulePaintTask extends TimerTask {
         @Override
         public void run() {
             repaint();
@@ -108,16 +139,18 @@ public class PlanetPainter extends Canvas {
         }
     }
   
-    private class ScheduleCalcTask extends TimerTask {
+    protected class ScheduleCalcTask extends TimerTask {
         @Override
         public void run() {
-            pl_syst.iteration();
+            if(to_calculate) {
+                pl_syst.iteration();
+            } else {
+                //System.out.println("I don't calculate");
+            }
         }
     }        
 
-    @Override
-    public void update(Graphics g) {
-        
+    protected Image createOffscreen() {
         offscreen = createImage(dim.width, dim.height);
         offgc = (Graphics2D) offscreen.getGraphics();
 
@@ -132,6 +165,7 @@ public class PlanetPainter extends Canvas {
         }
         
         for(int i = 0; i < size; ++i) {
+            
             offgc.setColor(palette.get(i));
 
             Ellipse2D ell = new Ellipse2D.Double(pl_syst.getPlanetLeftUpX(i),
@@ -142,9 +176,34 @@ public class PlanetPainter extends Canvas {
             offgc.draw(ell);
             offgc.fill(ell);
         }
-     
+        
+        return offscreen;
+    }
+    
+    @Override
+    public void update(Graphics g) {
+        
+        offscreen = createOffscreen();
         g.drawImage(offscreen, 0, 0, this);
         
     }
+
+    // reacting to buttons
+    
+    public void close() {
+        stopTimers();
+        init_delay     = -123;
+        interval_paint = -123;
+        interval_calc  = -123;
+    }
+    
+    public void pause() {
+        stopTimers();
+    }
+
+    public void resume() {
+        restartTimers();
+    }
+    
 
 }

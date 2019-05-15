@@ -12,10 +12,14 @@ import java.io.FileInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import model.PlanetarySystem;
-import view.PlanetPainter;
+import view.*;
 
 /**
  *
@@ -61,7 +65,7 @@ public class Planets {
         
         try {
             col = Color.decode(str);
-        } catch(Exception err) {
+        } catch(NumberFormatException err) {
             System.out.println("string " + str + " is not hex color");
         }
         
@@ -109,7 +113,7 @@ public class Planets {
 
     }
     
-    private static void printConfigFile(String filename) {
+    private static void readConfigFile(String filename) {
         try (InputStream input = new FileInputStream(filename)) {
 
             Properties prop = new Properties();
@@ -141,16 +145,56 @@ public class Planets {
         }
 
     }
-
     
     public static void main(String[] args) {
     
         Dimension dim = new Dimension(700, 500);
         
-        pl_syst = new PlanetarySystem();
-        pl_paint = new PlanetPainter(dim.width - 100, dim.height, pl_syst, 100, 10, 1, 0.1);
-        printConfigFile("config.properties");
-        main_wind = new Window(dim.width, dim.height, pl_syst, pl_paint);
+        pl_syst  = null;
+        InetAddress ip = null;
+        
+        try {
+            ip = InetAddress.getByName("127.0.0.1"); //.getLocalHost();
+        } catch (UnknownHostException ex) {
+            Logger.getLogger(Planets.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        int flag = 1;
+        
+        int port = 9129;
+        WebCommunicator web_comm = null;
+        
+
+        if(flag == 0) {
+            pl_syst = new PlanetarySystem();
+            pl_paint = new PlanetPainter(dim.width - 100, dim.height, pl_syst, 0.1, 100, 10, 1);
+            main_wind = new Window(dim.width, dim.height, pl_syst, pl_paint);
+
+            ServerWebCommunicator server =  new ServerWebCommunicator(main_wind, 
+                                                                      pl_syst,
+                                                                      100, 3, 
+                                                                      port);   
+            web_comm = server;
+
+        }
+        if(flag == 1) {
+            pl_syst = new PlanetarySystem();
+            pl_paint = new PlanetPainter(dim.width - 100, dim.height, pl_syst, 0.1, 100, 10); // no calculations
+            main_wind = new Window(dim.width, dim.height, pl_syst, pl_paint);
+
+            ClientWebCommunicator client =  new ClientWebCommunicator(main_wind,  
+                                                                      pl_syst, 
+                                                                      100, 3,
+                                                                      port, ip);
+            web_comm = client;
+        }
+        
+        if(flag == 3) {
+        }
+        readConfigFile("config.properties");
+        
+        main_wind.addWebComm(web_comm);
+        main_wind.start();
         
     }
     
