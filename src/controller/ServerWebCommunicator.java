@@ -1,4 +1,4 @@
-package planets;
+package controller;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -8,6 +8,8 @@ import java.net.SocketException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.PlanetarySystem;
+import view.SimState;
+import view.Window;
 
 public class ServerWebCommunicator extends WebCommunicator {
     
@@ -16,17 +18,27 @@ public class ServerWebCommunicator extends WebCommunicator {
                                  int init_delay_, int int_send_, 
                                  int port_) {
         
-        window = wind;
+        /*window = wind;
         if(window == null) {
             throw new IllegalArgumentException("window = null");
-        }
+        }*/
             
         pl_syst = pl_syst_;
         if(pl_syst == null) {
             throw new IllegalArgumentException("pl_syst = null");
         }
 
-        type = SERVER;
+        if(init_delay_ < 0) {
+            throw new IllegalArgumentException("init_delay_ < 0");
+        }
+        if(int_send_ < 0) {
+            throw new IllegalArgumentException("int_send_ < 0");
+        }
+        
+        init_delay = init_delay_;
+        int_web = int_send_;
+        
+        type = WebType.SERVER;
         port = port_;
         
         checkPort();
@@ -40,15 +52,13 @@ public class ServerWebCommunicator extends WebCommunicator {
             out = new ObjectOutputStream(client_sock.getOutputStream());
             out.flush();
             
-            his_state = Window.SimState.RUNNING;
+            his_state = SimState.RUNNING;
            
         }  catch (SocketException ex) {
             Logger.getLogger(ServerWebCommunicator.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(ServerWebCommunicator.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-        startWebTimer(init_delay_, int_send_);
         
     }
     

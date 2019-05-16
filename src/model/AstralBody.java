@@ -37,6 +37,17 @@ public class AstralBody implements Serializable {
     
     }
 
+    public void fix() {
+        is_fixed = true;
+    }
+    
+    public void unfix() {
+        is_fixed = false;
+    }
+    
+    public boolean getFixed() {
+        return is_fixed;
+    }
     
     public double getM() {
         return mass;
@@ -68,6 +79,10 @@ public class AstralBody implements Serializable {
     }
     
     public Point3d compGravAcc(AstralBody body) {
+        if(is_fixed) {
+            return new Point3d(0.0, 0.0, 0.0);
+        }
+        
         Point3d dist = distance(body);
         double len = dist.length();
 

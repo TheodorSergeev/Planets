@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import model.PlanetarySystem;
-import planets.Window;
+import view.Window;
 
 public class PlanetPainter extends Canvas {
 
@@ -46,10 +46,10 @@ public class PlanetPainter extends Canvas {
     
     protected void stopTimers() {
         if(timer_calc == null) {
-            throw new IllegalArgumentException("Can't close a null timer");
+            throw new IllegalArgumentException("Can't close a null timer timer_calc");
         }
         if(timer_paint == null) {
-            throw new IllegalArgumentException("Can't close a null timer");
+            throw new IllegalArgumentException("Can't close a null timer timer_paint");
         }
 
         timer_calc.cancel();
@@ -155,7 +155,6 @@ public class PlanetPainter extends Canvas {
         offgc = (Graphics2D) offscreen.getGraphics();
 
         offgc.setColor(Color.WHITE);//getForeground());
-//      offgc.setColor(getBackground());
         offgc.fillRect(0, 0, dim.width, dim.height);
         
         int size = pl_syst.size();
@@ -187,8 +186,6 @@ public class PlanetPainter extends Canvas {
         g.drawImage(offscreen, 0, 0, this);
         
     }
-
-    // reacting to buttons
     
     public void close() {
         stopTimers();

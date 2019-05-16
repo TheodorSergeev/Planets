@@ -1,4 +1,4 @@
-package planets;
+package controller;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -11,17 +11,20 @@ import java.util.Timer;
 import java.util.TimerTask;
 import model.PlanetarySystem;
 import model.Point3d;
+import view.SimState;
+import view.Window;
 
 abstract public class WebCommunicator {
+    
+    int init_delay, int_web;
     
     PlanetarySystem pl_syst;
     Window window;
     
-    protected Window.SimState my_state, his_state;
+    protected SimState my_state, his_state;
     
     protected int port;
     protected InetAddress ip;
-    protected int type;         // server or client
     
     protected Timer timer_web;  // receive/send info via web
     
@@ -31,11 +34,31 @@ abstract public class WebCommunicator {
     protected ObjectOutputStream out;
     protected ObjectInputStream  inp;
     
-    final protected int SERVER = 111;
-    final protected int CLIENT = 999;
+    protected WebType type;
+    
+    public enum WebType {
+        SERVER,
+        CLIENT
+    }
+    
     final protected int MAX_PORT_NUMBER = 9999;
     final protected int MIN_PORT_NUMBER = 9000;
 
+    public WebType type() {
+        return type;
+    }
+    
+    public void setWindow(Window wind_) {
+        
+        if(wind_ == null) {
+            throw new IllegalArgumentException("Invalid window reference: " + port);
+        }
+        window = wind_;
+        
+        startWebTimer(init_delay, int_web);
+
+    }
+    
     final protected void checkPort() {
         if(port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
             throw new IllegalArgumentException("Invalid start port: " + port);
@@ -48,20 +71,18 @@ abstract public class WebCommunicator {
         }
     }
 
-    public void setState(Window.SimState new_state) {
-        System.out.println("new = " + new_state);
+    public void setState(SimState new_state) {
         my_state = new_state;
-        System.out.println("new = " + my_state);
     }
     
     private void sendMessage() {
-        if(his_state == Window.SimState.CLOSED) {
+        if(his_state == SimState.CLOSED) {
             throw new IllegalArgumentException("partner is already closed");
         }
 
-        if(type == SERVER && his_state == Window.SimState.RUNNING && my_state == Window.SimState.RUNNING) {
+        if(type == WebType.SERVER && his_state == SimState.RUNNING && my_state == SimState.RUNNING) {
             sendPlanetsPos();
-        } else if(his_state != Window.SimState.CLOSED) {
+        } else if(his_state != SimState.CLOSED) {
             sendState();
         }
     }
@@ -89,7 +110,7 @@ abstract public class WebCommunicator {
         if(his_state == null) {
             throw new IllegalArgumentException("sendState failed - WebState his_state is null");
         }
-        if(his_state == Window.SimState.CLOSED) {
+        if(his_state == SimState.CLOSED) {
             throw new IllegalArgumentException("sendState failed - WebState his_state is CLOSED");
         }
 
@@ -108,17 +129,15 @@ abstract public class WebCommunicator {
         if(inp == null) {
             throw new IllegalArgumentException("input stream is null");
         }
-        
-        System.out.println("state = " + my_state);
-                
-        if(my_state == Window.SimState.CLOSED) {
+                        
+        if(my_state == SimState.CLOSED) {
             throw new IllegalArgumentException("connection to me is closed - no receiving");
         }
         
         try {
             Object newmsg = inp.readObject();
             
-            if(type == CLIENT && newmsg instanceof ArrayList<?>) {
+            if(type == WebType.CLIENT && newmsg instanceof ArrayList<?>) {
                 if(((ArrayList<?>) newmsg).size() == pl_syst.size()) {
                     if(((ArrayList<?>) newmsg).get(0) instanceof Point3d) {
                         pl_syst.setPlanetsPositions((ArrayList<Point3d>) newmsg);
@@ -133,12 +152,9 @@ abstract public class WebCommunicator {
                             + "received array of planet positions "
                             + "doesn't match the existing array's size");
                 }
-
-                return;
-
             }
-            else if(newmsg instanceof Window.SimState) {
-                recvCommand(his_state, (Window.SimState) newmsg);
+            else if(newmsg instanceof SimState) {
+                recvCommand(his_state, (SimState) newmsg);
             }
             else {
                 throw new IllegalArgumentException("unrecognised type of object received");
@@ -152,32 +168,30 @@ abstract public class WebCommunicator {
     }
     
     
-    private void recvCommand(Window.SimState his_old_state, Window.SimState his_new_state) {
+    private void recvCommand(SimState his_old_state, SimState his_new_state) {
         
-        System.out.println("his old state = " + his_old_state + "  his_new_state = " + his_new_state);
         his_state = his_new_state;
-        System.out.println("his_state = " + his_state);
 
         if(his_old_state == his_new_state) {
             return;
         }
         else {
             
-            if(his_old_state == Window.SimState.PAUSED && 
-               his_new_state == Window.SimState.RUNNING && 
-               my_state == Window.SimState.PAUSED) {
+            if(his_old_state == SimState.PAUSED && 
+               his_new_state == SimState.RUNNING && 
+               my_state == SimState.PAUSED) {
                 window.resumeSimulation();
             }
             
-            if(his_old_state == Window.SimState.RUNNING && 
-               his_new_state == Window.SimState.PAUSED && 
-               my_state == Window.SimState.RUNNING) {
+            if(his_old_state == SimState.RUNNING && 
+               his_new_state == SimState.PAUSED && 
+               my_state == SimState.RUNNING) {
                 window.pauseSimulation();
             }
             
-            if(his_old_state != Window.SimState.CLOSED && 
-               his_new_state == Window.SimState.CLOSED &&
-               my_state != Window.SimState.CLOSED) {
+            if(his_old_state != SimState.CLOSED && 
+               his_new_state == SimState.CLOSED &&
+               my_state != SimState.CLOSED) {
                 System.out.println("received closing command");
                 window.closeWindow();
             }
@@ -193,7 +207,7 @@ abstract public class WebCommunicator {
         System.out.println("closeConnection");
         stopWebTimer();
        
-        if(his_state != Window.SimState.CLOSED) {
+        if(his_state != SimState.CLOSED) {
             System.out.println("informing of closing connection");
             sendState();
             System.out.println("informed");
@@ -202,7 +216,7 @@ abstract public class WebCommunicator {
         if(client_sock == null) {   
             throw new IllegalArgumentException("client stream from socket is null");
         }
-        if(type == SERVER) {
+        if(type == WebType.SERVER) {
             if(server_sock == null) {
                 throw new IllegalArgumentException("server_sock is null");
             }
@@ -220,7 +234,7 @@ abstract public class WebCommunicator {
             client_sock.close();
             client_sock = null;
             System.out.println("close client 2");
-            if(type == SERVER) {
+            if(type == WebType.SERVER) {
                 server_sock.close();
                 server_sock = null;
             }
@@ -240,30 +254,29 @@ abstract public class WebCommunicator {
                 throw new IllegalArgumentException("window = null");
             }
             
-            System.out.println("schedule");
-            if(my_state == Window.SimState.CLOSED) {
+            if(my_state == SimState.CLOSED) {
                 throw new IllegalArgumentException("connection is closed");
             }
             
             switch(type) {
                 case SERVER:
                     sendMessage();
-                    if(my_state == Window.SimState.CLOSED || his_state == Window.SimState.CLOSED) {
+                    if(my_state == SimState.CLOSED || his_state == SimState.CLOSED) {
                         return;
                     }
                     recvMessage();
                     break;
                 case CLIENT:
                     recvMessage();
-                    if(my_state == Window.SimState.CLOSED || his_state == Window.SimState.CLOSED) {
+                    if(my_state == SimState.CLOSED || his_state == SimState.CLOSED) {
                         return;
                     }
                     sendMessage();
                     break;
                 default:
                     throw new IllegalArgumentException("type = " + type +
-                            " must be equal to " + CLIENT + " (CLIENT) or " +
-                            SERVER + " (SERVER)");
+                            " must be equal to " + WebType.CLIENT + " (CLIENT) or " +
+                            WebType.SERVER + " (SERVER)");
             }
         }
     }        
@@ -285,7 +298,6 @@ abstract public class WebCommunicator {
             throw new IllegalArgumentException("int_send_ < 0.");
         }   
                   
-        System.out.println("STARTSRTRS");
         timer_web   = new Timer();
         timer_web.scheduleAtFixedRate(new WebCommunicator.ScheduleWebTask(), init_delay_, int_web_);             
 

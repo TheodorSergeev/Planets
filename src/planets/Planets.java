@@ -1,9 +1,3 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package planets;
 
 import java.awt.Color;
@@ -18,22 +12,15 @@ import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import model.PlanetarySystem;
+import model.*;
 import view.*;
-
-/**
- *
- * @author root
- */
+import controller.*;
+        
 public class Planets {
 
     private static PlanetarySystem pl_syst;
     private static PlanetPainter pl_paint;
     private static Window main_wind;
-    
-    /**
-     * @param args the command line arguments
-     */ 
     
     private static boolean getPropertiesBoolean(Properties prop, String name) {
         
@@ -54,7 +41,7 @@ public class Planets {
         
     }
 
-    private static Color   getPropertiesHexColor(Properties prop, String name) {
+    private static Color getPropertiesHexColor(Properties prop, String name) {
         
         if(prop == null) {
             throw new IllegalArgumentException("Properties is null in getPropertiesHexColor"); 
@@ -114,6 +101,13 @@ public class Planets {
     }
     
     private static void readConfigFile(String filename) {
+        if(pl_syst == null) {
+            throw new IllegalArgumentException("failed readConfigFile - pl_syst = null");
+        }
+        if(pl_paint == null) {
+            throw new IllegalArgumentException("failed readConfigFile - pl_paint = null");
+        }
+        
         try (InputStream input = new FileInputStream(filename)) {
 
             Properties prop = new Properties();
@@ -162,38 +156,38 @@ public class Planets {
         int flag = 1;
         
         int port = 9129;
-        WebCommunicator web_comm = null;
         
+        double dt = 0.1;
+        double paint_wait = 0.1;
+        
+        pl_syst = new PlanetarySystem(dt);
 
         if(flag == 0) {
-            pl_syst = new PlanetarySystem();
-            pl_paint = new PlanetPainter(dim.width - 100, dim.height, pl_syst, 0.1, 100, 10, 1);
-            main_wind = new Window(dim.width, dim.height, pl_syst, pl_paint);
-
+            pl_paint = new PlanetPainter(dim.width - 100, dim.height, pl_syst, paint_wait, 100, 10, 1);
+            readConfigFile("config.properties");
             ServerWebCommunicator server =  new ServerWebCommunicator(main_wind, 
                                                                       pl_syst,
                                                                       100, 3, 
                                                                       port);   
-            web_comm = server;
+            main_wind = new Window(dim.width, dim.height, pl_syst, pl_paint, server);
 
         }
-        if(flag == 1) {
-            pl_syst = new PlanetarySystem();
-            pl_paint = new PlanetPainter(dim.width - 100, dim.height, pl_syst, 0.1, 100, 10); // no calculations
-            main_wind = new Window(dim.width, dim.height, pl_syst, pl_paint);
-
+        else if(flag == 1) {
+            pl_paint = new PlanetPainter(dim.width - 100, dim.height, pl_syst, paint_wait, 100, 10); // no calculations
+            readConfigFile("config.properties");
             ClientWebCommunicator client =  new ClientWebCommunicator(main_wind,  
                                                                       pl_syst, 
                                                                       100, 3,
                                                                       port, ip);
-            web_comm = client;
+            main_wind = new Window(dim.width, dim.height, pl_syst, pl_paint, client);
+
         }
-        
-        if(flag == 3) {
+        else {
+            pl_paint = new PlanetPainter(dim.width - 100, dim.height, pl_syst, paint_wait, 100, 10, 1);
+            readConfigFile("config.properties");
+            main_wind = new Window(dim.width, dim.height, pl_syst, pl_paint); // no web comm
         }
-        readConfigFile("config.properties");
-        
-        main_wind.addWebComm(web_comm);
+                
         main_wind.start();
         
     }
