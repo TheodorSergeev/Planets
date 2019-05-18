@@ -153,7 +153,7 @@ public class Planets {
             Logger.getLogger(Planets.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        int flag = 1;
+        int flag = 3;
         
         int port = 9129;
         

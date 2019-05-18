@@ -127,6 +127,9 @@ public class Window extends Frame {
             }
             
             button_unfix.add(new_but);
+            
+            new_but.setBackground(pl_painter.getPlanetColor(i));
+
             UnfixPlanetButListener but_unf_list = new UnfixPlanetButListener(this, pl_syst, i);
             new_but.setBounds(dim.width - 80, 50 + 30 * (i + 1), 60, 20); 
             new_but.addActionListener(but_unf_list);      

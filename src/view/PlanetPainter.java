@@ -43,7 +43,14 @@ public class PlanetPainter extends Canvas {
         palette.add(new_col);
     }
     
-    
+    public Color getPlanetColor(int pl_num) {
+        if(pl_num < 0 || pl_num > palette.size()) {
+            throw new IllegalArgumentException("No planet with number " + 
+                                               pl_num +  "exists");
+        }
+        return palette.get(pl_num);
+    }
+
     protected void stopTimers() {
         if(timer_calc == null) {
             throw new IllegalArgumentException("Can't close a null timer timer_calc");
